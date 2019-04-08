@@ -4,7 +4,7 @@
   "description": "repository for sequelize article",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"No test\""
+    "server": "nodemon index.js"
   },
   "repository": {
     "type": "git",
@@ -24,7 +24,7 @@
     "express": "^4.16.3",
     "mysql2": "^1.5.3",
     "sequelize": "^4.37.4",
-    "sqlite3": "^4.0.0"
+    "sqlite3": "^4.0.6"
   },
   "devDependencies": {
     "nodemon": "^1.17.2"

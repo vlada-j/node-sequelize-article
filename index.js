@@ -20,14 +20,16 @@ app.get('/api/users', (req, res) => {
 // create a blog post
 app.post('/api/blogs', (req, res) => {
     const body = req.body
-    const tags = body.tags.map(tag => Tag.findOrCreate({ where: { name: tag.name }, defaults: { name: tag.name }})
-                                         .spread((tag, created) => tag))
+    // SQLITE BUG when we have more then 1 tag -  BEGIN DEFERRED TRANSACTION
+    const tags = body.tags.map( tag => Tag.findOrCreate({ where: { name: tag.name }, defaults: { name: tag.name }}).spread((tag, created) => tag) )
+
     User.findById(body.userId)
         .then(() => Blog.create(body))
         .then(blog => Promise.all(tags).then(storedTags => blog.addTags(storedTags)).then(() => blog))
         .then(blog => Blog.findOne({ where: {id: blog.id}, include: [User, Tag]}))
         .then(blogWithAssociations => res.json(blogWithAssociations))
-        .catch(err => res.status(400).json({ err: `User with id = [${body.userId}] doesn\'t exist.`}))
+        .catch(err => res.status(400).json({ err: err}))
+        // .catch(err => res.status(400).json({ err: `User with id = [${body.userId}] doesn\'t exist.`}))
 })
 
 // find blogs belonging to one user or all blogs

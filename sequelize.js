@@ -5,13 +5,15 @@ const TagModel = require('./models/tag')
 
 const sequelize = new Sequelize('codementor', 'root', 'root', {
   host: 'localhost',
-  dialect: 'mysql',
   pool: {
     max: 10,
     min: 0,
     acquire: 30000,
     idle: 10000
-  }
+  },
+  dialect: 'sqlite',
+  path: 'dev-database.sqlite3',
+  name: 'test_database',
 })
 
 const User = UserModel(sequelize, Sequelize)
@@ -25,7 +27,7 @@ Blog.belongsToMany(Tag, { through: BlogTag, unique: false })
 Tag.belongsToMany(Blog, { through: BlogTag, unique: false })
 Blog.belongsTo(User);
 
-sequelize.sync({ force: true })
+sequelize.sync({force: false})
   .then(() => {
     console.log(`Database & tables created!`)
   })
