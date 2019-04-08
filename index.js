@@ -1,6 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const { User, Blog, Tag } = require('./sequelize')
+const { User, Blog, Tag, sequelize } = require('./sequelize')
 
 const app = express()
 app.use(bodyParser.json())
@@ -21,11 +21,16 @@ app.get('/api/users', (req, res) => {
 app.post('/api/blogs', (req, res) => {
     const body = req.body
     // SQLITE BUG when we have more then 1 tag -  BEGIN DEFERRED TRANSACTION
-    const tags = body.tags.map( tag => Tag.findOrCreate({ where: { name: tag.name }, defaults: { name: tag.name }}).spread((tag, created) => tag) )
+ //   const tags = body.tags.map( tag => Tag.findOrCreate({ where: { name: tag.name }, defaults: { name: tag.name }}).spread((tag, created) => tag) )
+
+	// FIX
+	const tags = sequelize.transaction(t => {
+		return Promise.all( body.tags.map( tag => Tag.findOrCreate({ where: { name: tag.name }, defaults: { name: tag.name }, transaction: t}).spread((tag, created) => tag) ));
+	});
 
     User.findById(body.userId)
         .then(() => Blog.create(body))
-        .then(blog => Promise.all(tags).then(storedTags => blog.addTags(storedTags)).then(() => blog))
+        .then(blog => tags.then(storedTags => blog.addTags(storedTags)).then(() => blog))
         .then(blog => Blog.findOne({ where: {id: blog.id}, include: [User, Tag]}))
         .then(blogWithAssociations => res.json(blogWithAssociations))
         .catch(err => res.status(400).json({ err: err}))
