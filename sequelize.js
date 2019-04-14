@@ -1,40 +1,45 @@
 const Sequelize = require('sequelize')
 const UserModel = require('./models/user')
 const BlogModel = require('./models/blog')
+const CommentModel = require('./models/comment')
 const TagModel = require('./models/tag')
+const path = require('path')
 
-const sequelize = new Sequelize('codementor', 'root', 'root', {
+const db = new Sequelize('codementor', 'root', 'root', {
+  name: 'test_database',
   host: 'localhost',
+  dialect: 'sqlite',
+  // path: 'dev-database.sqlite3',
+  storage: path.join(process.cwd(), 'dev-database.sqlite3'),
   pool: {
     max: 10,
     min: 0,
     acquire: 30000,
     idle: 10000
   },
-  dialect: 'sqlite',
-  path: 'dev-database.sqlite3',
-  name: 'test_database',
 })
 
-const User = UserModel(sequelize, Sequelize)
+const User = UserModel(db, Sequelize)
 // BlogTag will be our way of tracking relationship between Blog and Tag models
 // each Blog can have multiple tags and each Tag can have multiple blogs
-const BlogTag = sequelize.define('blog_tag', {})
-const Blog = BlogModel(sequelize, Sequelize)
-const Tag = TagModel(sequelize, Sequelize)
+const BlogTag = db.define('blog_tag', {})
+const Blog = BlogModel(db, Sequelize)
+const CommentTag = db.define('comment_tag', {})
+const Comment = CommentModel(db, Sequelize)
+const Tag = TagModel(db, Sequelize)
 
 Blog.belongsToMany(Tag, { through: BlogTag, unique: false })
+Comment.belongsToMany(Tag, { through: CommentTag, unique: false })
 Tag.belongsToMany(Blog, { through: BlogTag, unique: false })
+Tag.belongsToMany(Comment, { through: CommentTag, unique: false })
 Blog.belongsTo(User);
+Comment.belongsTo(User);
 
-sequelize.sync({force: false})
-  .then(() => {
-    console.log(`Database & tables created!`)
-  })
 
 module.exports = {
   User,
   Blog,
+  Comment,
   Tag,
-  sequelize
+  db
 }
