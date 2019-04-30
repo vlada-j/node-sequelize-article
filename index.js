@@ -90,21 +90,72 @@ app.get('/api/comment/:tag/tag', (req, res) => {
 
 // find blogs or comments by tag
 app.get('/api/search/:tag?', (req, res) => {
-    let tag = req.params.tag;
+    let promise,
+        tag = req.params.tag;
 
-    return Promise.all([
-            Blog.findAll({ include: [
+    if (tag) {
+        promise =
+            /*Promise.all([
+            Blog.findAll({
+                attributes: ['id', ['text','content']],
+                include: [
                     // { model: User },
-                    { model: Tag, where: { name: tag } }
+                    { model: Tag, where: { name: tag }, attributes: ['name'] }
                 ]}),
-            Comment.findAll({ include: [
+            Comment.findAll({
+                attributes: ['id', ['comment','content']],
+                include: [
                     // { model: User },
-                    { model: Tag, where: { name: tag } }
+                    { model: Tag, where: { name: tag }, attributes: ['name'] }
+                ]})
+        ])*/
+            Tag.findAll({
+                where: { name: tag },
+                include: [
+                    // { model: User },
+                    { model: Blog, include: [{ model: Tag }] },
+                    { model: Comment, include: [{ model: Tag }] }
+                ]})
+            .then(r => r[0].blogs.concat(r[0].comments) )
+            .then(res => res.map(r => { return {
+                    id: r.id,
+                    content: r.text || r.comment || r.content || r,
+                    tags: r.tags.map(t=>t.name)
+                };
+            }))
+    } else {
+        promise = Promise.all([
+            Blog.findAll({
+                // attributes: ['id', ['text','content']],
+                include: [
+                    // { model: User },
+                    {
+                        model: Tag,
+                    //    attributes: ['name']
+                    }
+                ]}),
+            Comment.findAll({
+                // attributes: ['id', ['comment','content']],
+                include: [
+                    // { model: User },
+                    {
+                        model: Tag,
+                        //attributes: ['name']
+                    }
                 ]})
         ])
-        .then(r => r[0].concat(r[1]) )
+            .then(r => r[0].concat(r[1]) )
+            .then(res => res.map(r => { return {
+                id: r.id,
+                content: r.text || r.comment || r.content || r,
+                tags: r.tags.map(t=>t.name)
+            };
+            }))
+    }
+
+    return promise
         .then(response => {
-            let formatted = response.map(r => r.format() );
+            let formatted = response;//.map(r => r.format() );
             return res.json(formatted);
         })
 });

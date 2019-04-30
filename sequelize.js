@@ -28,9 +28,9 @@ const CommentTag = db.define('comment_tag', {})
 const Comment = CommentModel(db, Sequelize)
 const Tag = TagModel(db, Sequelize)
 
+Tag.belongsToMany(Blog, { through: BlogTag, unique: false })
 Blog.belongsToMany(Tag, { through: BlogTag, unique: false })
 Comment.belongsToMany(Tag, { through: CommentTag, unique: false })
-Tag.belongsToMany(Blog, { through: BlogTag, unique: false })
 Tag.belongsToMany(Comment, { through: CommentTag, unique: false })
 Blog.belongsTo(User);
 Comment.belongsTo(User);
